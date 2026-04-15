@@ -12,6 +12,14 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
 
+@app.middleware("http")
+async def force_https_scheme_on_cloud_run(request: Request, call_next):
+    forwarded_proto = request.headers.get("x-forwarded-proto")
+    if forwarded_proto:
+        request.scope["scheme"] = forwarded_proto.split(",")[0].strip()
+    response = await call_next(request)
+    return response
+
 def load_history(history_json: str):
     if not history_json.strip():
         return []
